@@ -1,15 +1,11 @@
+#include "common.h"
 #include <cmath>
 #include <cstdlib>
 #include <cuda.h>
 
-__global__ void naive_gemm(
-  const float* __restrict__ A,
-  const float* __restrict__ B,
-  float* __restrict__ C,
-  int M,
-  int K,
-  int N
-) {
+__global__ void naive_gemm(const float *__restrict__ A,
+                           const float *__restrict__ B, float *__restrict__ C,
+                           int M, int K, int N) {
   // 每个thread负责C中的一个元素
   int row = blockIdx.y * blockDim.y + threadIdx.y;
   int col = blockIdx.x * blockDim.x + threadIdx.x;
@@ -23,13 +19,8 @@ __global__ void naive_gemm(
   C[row * N + col] = acc;
 }
 
-__host__ void init(
-  float* __restrict__ A,
-  float* __restrict__ B,
-  int M,
-  int K,
-  int N
-) {
+__host__ void init(float *__restrict__ A, float *__restrict__ B, int M, int K,
+                   int N) {
   std::srand(42);
   for (int i = 0; i < M * K; ++i) {
     A[i] = (float)rand() / RAND_MAX;
@@ -39,7 +30,7 @@ __host__ void init(
   }
 }
 
-int main () {
+int main() {
   int M = 256;
   int N = 256;
   int K = 128;
@@ -49,34 +40,35 @@ int main () {
   int blockDim_y = (N + threadDim_y - 1) / threadDim_y;
   dim3 block(threadDim_x, threadDim_y);
   dim3 grid(blockDim_x, blockDim_y);
-  
+
   int bytes_A = M * K * sizeof(float);
   int bytes_B = K * N * sizeof(float);
   int bytes_C = M * N * sizeof(float);
 
   float *h_A, *h_B, *h_C;
-  cudaMallocHost(&h_A, bytes_A);
-  cudaMallocHost(&h_B, bytes_B);
-  cudaMallocHost(&h_C, bytes_C);
+  CUDA_CHECK(cudaMallocHost(&h_A, bytes_A));
+  CUDA_CHECK(cudaMallocHost(&h_B, bytes_B));
+  CUDA_CHECK(cudaMallocHost(&h_C, bytes_C));
 
   init(h_A, h_B, M, K, N);
 
   float *d_A, *d_B, *d_C;
-  cudaMalloc(&d_A, bytes_A);
-  cudaMalloc(&d_B, bytes_B);
-  cudaMalloc(&d_C, bytes_C);
-  
-  cudaMemcpy(h_A, d_A, bytes_A, cudaMemcpyHostToDevice);
-  cudaMemcpy(h_B, d_B, bytes_B, cudaMemcpyHostToDevice);
+  CUDA_CHECK(cudaMalloc(&d_A, bytes_A));
+  CUDA_CHECK(cudaMalloc(&d_B, bytes_B));
+  CUDA_CHECK(cudaMalloc(&d_C, bytes_C));
 
-  naive_gemm<<<grid, block>>>(d_A, d_B,  d_C, M, K, N);
+  CUDA_CHECK(cudaMemcpy(h_A, d_A, bytes_A, cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemcpy(h_B, d_B, bytes_B, cudaMemcpyHostToDevice));
 
-  cudaMemcpy(d_C, h_C, bytes_C, cudaMemcpyDeviceToHost);
+  naive_gemm<<<grid, block>>>(d_A, d_B, d_C, M, K, N);
+  CUDA_CHECK_KERNEL();
 
-  cudaFreeHost(h_A);
-  cudaFreeHost(h_B);
-  cudaFreeHost(h_C);
-  cudaFree(d_A);
-  cudaFree(d_B);
-  cudaFree(d_C);
+  CUDA_CHECK(cudaMemcpy(d_C, h_C, bytes_C, cudaMemcpyDeviceToHost));
+
+  CUDA_CHECK(cudaFreeHost(h_A));
+  CUDA_CHECK(cudaFreeHost(h_B));
+  CUDA_CHECK(cudaFreeHost(h_C));
+  CUDA_CHECK(cudaFree(d_A));
+  CUDA_CHECK(cudaFree(d_B));
+  CUDA_CHECK(cudaFree(d_C));
 }
