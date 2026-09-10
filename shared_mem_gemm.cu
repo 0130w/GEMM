@@ -8,9 +8,14 @@ __global__ void shared_mem_gemm(const float *__restrict__ A,
   __shared__ float tileA[B_M * B_K]; // 256 * 4 bytes
   __shared__ float tileB[B_K * B_N];
   __shared__ float tileC[B_M * B_N];
-  int rowA = blockIdx.x * B_M;
-  int colA = blockIdx.y * B_K;
-  
+  int row_tile = blockIdx.x * B_M;
+  int col_tile = blockIdx.y * B_K;
+
+  // copy tileA from global memory to shared memory
+  // TODO:
+  tileA[threadIdx.x * blockDim.y + threadIdx.y] = A[(row_tile + threadIdx.x) * K + col_tile + threadIdx.y];
+  tileB[threadIdx.x * blockDim.y + threadIdx.y] = B[(row_tile + threadIdx.x) * N + col_tile + threadIdx.y];
+  __syncthreads();
 
   return;
 }
