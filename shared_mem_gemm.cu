@@ -1,5 +1,4 @@
 #include "load_tile.cuh"
-#include <__clang_cuda_runtime_wrapper.h>
 
 template <int T_M, int T_N, int T_K>
 __global__ void __launch_bounds__(T_M *T_N)

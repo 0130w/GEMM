@@ -1,5 +1,4 @@
 #include "load_tile.cuh"
-#include <__clang_cuda_builtin_vars.h>
 
 template <int THREADNUM, int TR, int TC>
 __device__ void load_tile(float *tile, const float *__restrict__ src, int r0,
