@@ -31,19 +31,16 @@ __host__ void init(float *__restrict__ A, float *__restrict__ B, int M, int K,
 }
 
 int main() {
-  int M = 256;
-  int N = 256;
-  int K = 128;
-  int threadDim_x = 16;
-  int threadDim_y = 16;
-  int blockDim_x = (M + threadDim_x - 1) / threadDim_x;
-  int blockDim_y = (N + threadDim_y - 1) / threadDim_y;
-  dim3 block(threadDim_x, threadDim_y);
-  dim3 grid(blockDim_x, blockDim_y);
+  constexpr int M = 256, N = 256, K = 128;
+  constexpr int blockDim_x = 16, blockDim_y = 16;
+  constexpr int gridDim_x = (M + blockDim_x - 1) / blockDim_x;
+  constexpr int gridDim_y = (N + blockDim_y - 1) / blockDim_y;
+  dim3 block(blockDim_x, blockDim_y);
+  dim3 grid(gridDim_x, gridDim_y);
 
-  int bytes_A = M * K * sizeof(float);
-  int bytes_B = K * N * sizeof(float);
-  int bytes_C = M * N * sizeof(float);
+  constexpr int bytes_A = M * K * sizeof(float);
+  constexpr int bytes_B = K * N * sizeof(float);
+  constexpr int bytes_C = M * N * sizeof(float);
 
   float *h_A, *h_B, *h_C;
   CUDA_CHECK(cudaMallocHost(&h_A, bytes_A));

@@ -1,8 +1,8 @@
-#include "load_tile.cuh"
+#pragma once
 
 template <int THREADNUM, int TR, int TC>
-__device__ void load_tile(float *tile, const float *__restrict__ src, int r0,
-                          int c0, int rows, int cols) {
+__device__ void store_tile(const float *tile, float *__restrict__ src, int r0,
+                           int c0, int rows, int cols) {
   using ll = long long;
   int tid = threadIdx.y * blockDim.x + threadIdx.x;
   constexpr int N = TR * TC;
@@ -14,7 +14,7 @@ __device__ void load_tile(float *tile, const float *__restrict__ src, int r0,
       int c = i % TC;
       int gr = r + r0;
       int gc = c + c0;
-      tile[i] = (gr < rows && gc < cols) ? src[(ll)gr * cols + gc] : 0.0f;
+      src[(ll)gr * cols + gc] = (gr < rows && gc < cols) ? tile[i] : 0.0f;
     }
   }
 }
