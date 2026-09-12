@@ -1,37 +1,9 @@
-#include "common.h"
-#include <cmath>
-#include <cstdlib>
-#include <cuda.h>
-
-__global__ void naive_gemm(const float *__restrict__ A,
-                           const float *__restrict__ B, float *__restrict__ C,
-                           int M, int K, int N) {
-  // 每个thread负责C中的一个元素
-  int row = blockIdx.y * blockDim.y + threadIdx.y;
-  int col = blockIdx.x * blockDim.x + threadIdx.x;
-  if (row >= M || col >= N) {
-    return;
-  }
-  float acc = 0.f;
-  for (int k = 0; k < K; ++k) {
-    acc = fmaf(A[row * K + k], B[k * N + col], acc);
-  }
-  C[row * N + col] = acc;
-}
-
-__host__ void init(float *__restrict__ A, float *__restrict__ B, int M, int K,
-                   int N) {
-  std::srand(42);
-  for (int i = 0; i < M * K; ++i) {
-    A[i] = (float)rand() / RAND_MAX;
-  }
-  for (int i = 0; i < K * N; ++i) {
-    B[i] = (float)rand() / RAND_MAX;
-  }
-}
+#include "shared_mem_gemm.cuh"
+#include "utils/common.h"
 
 int main() {
   constexpr int M = 256, N = 256, K = 128;
+  constexpr int T_M = 16, T_N = 16, T_K = 16;
   constexpr int blockDim_x = 16, blockDim_y = 16;
   constexpr int gridDim_x = (M + blockDim_x - 1) / blockDim_x;
   constexpr int gridDim_y = (N + blockDim_y - 1) / blockDim_y;
@@ -57,7 +29,8 @@ int main() {
   CUDA_CHECK(cudaMemcpy(h_A, d_A, bytes_A, cudaMemcpyHostToDevice));
   CUDA_CHECK(cudaMemcpy(h_B, d_B, bytes_B, cudaMemcpyHostToDevice));
 
-  naive_gemm<<<grid, block>>>(d_A, d_B, d_C, M, K, N);
+  shared_mem_gemm<blockDim_x * blockDim_y, T_M, T_N, T_K>
+      <<<grid, block>>>(d_A, d_B, d_C, M, K, N);
   CUDA_CHECK_KERNEL();
 
   CUDA_CHECK(cudaMemcpy(d_C, h_C, bytes_C, cudaMemcpyDeviceToHost));

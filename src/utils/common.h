@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdio>
+#include <cstdlib>
 
 #define CUDA_CHECK(expr)                                                       \
   do {                                                                         \
@@ -16,3 +17,14 @@
     CUDA_CHECK(cudaGetLastError());                                            \
     CUDA_CHECK(cudaDeviceSynchronize());                                       \
   } while (0)
+
+inline void init(float *__restrict__ A, float *__restrict__ B, int M, int K,
+                 int N) {
+  std::srand(42);
+  for (int i = 0; i < M * K; ++i) {
+    A[i] = (float)rand() / RAND_MAX;
+  }
+  for (int i = 0; i < K * N; ++i) {
+    B[i] = (float)rand() / RAND_MAX;
+  }
+}

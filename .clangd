@@ -1,0 +1,16 @@
+CompileFlags:
+  CompilationDatabase: None
+  Add:
+    - -xcuda
+    - --cuda-path=/usr/local/cuda
+    - --cuda-gpu-arch=sm_86
+    - -I/root/GEMM/src
+    - -isystem
+    - /usr/local/cuda/targets/x86_64-linux/include
+  Remove:
+    - -gencode=*
+    - --generate-code=*
+    - -rdc=*
+    - -forward-unknown-to-host-compiler
+    - --options-file
+    - -arch=*

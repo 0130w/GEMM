@@ -5,8 +5,11 @@ Some implemention of genernal matrix multiply.
 ## run
 
 ```bash
-make build
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CUDA_ARCHITECTURES=native
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CUDA_ARCHITECTURES=86
 cmake --build build -j
-./build/gemm
+ctest --test-dir build --output-on-failure
 ```
+
+## todo
+
+add cublas beat matching
