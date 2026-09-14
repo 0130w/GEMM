@@ -12,5 +12,5 @@ ctest --test-dir build --output-on-failure
 
 ## todo
 
-- [-] add cublas beat matching
+- [x] add cublas beat matching
 - [ ] fix shared_mem_gemm
