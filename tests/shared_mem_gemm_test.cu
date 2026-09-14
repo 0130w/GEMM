@@ -1,5 +1,6 @@
 #include "shared_mem_gemm.cuh"
 #include "utils/common.h"
+#include "utils/cublas_check.cuh"
 
 int main() {
   constexpr int M = 256, N = 256, K = 128;
@@ -14,31 +15,42 @@ int main() {
   constexpr int bytes_B = K * N * sizeof(float);
   constexpr int bytes_C = M * N * sizeof(float);
 
-  float *h_A, *h_B, *h_C;
+  float *h_A, *h_B, *h_C, *h_C_ref;
   CUDA_CHECK(cudaMallocHost(&h_A, bytes_A));
   CUDA_CHECK(cudaMallocHost(&h_B, bytes_B));
   CUDA_CHECK(cudaMallocHost(&h_C, bytes_C));
+  CUDA_CHECK(cudaMallocHost(&h_C_ref, bytes_C));
 
   init(h_A, h_B, M, K, N);
 
-  float *d_A, *d_B, *d_C;
+  float *d_A, *d_B, *d_C, *d_C_ref;
   CUDA_CHECK(cudaMalloc(&d_A, bytes_A));
   CUDA_CHECK(cudaMalloc(&d_B, bytes_B));
   CUDA_CHECK(cudaMalloc(&d_C, bytes_C));
+  CUDA_CHECK(cudaMalloc(&d_C_ref, bytes_C));
 
-  CUDA_CHECK(cudaMemcpy(h_A, d_A, bytes_A, cudaMemcpyHostToDevice));
-  CUDA_CHECK(cudaMemcpy(h_B, d_B, bytes_B, cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemcpy(d_A, h_A, bytes_A, cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemcpy(d_B, h_B, bytes_B, cudaMemcpyHostToDevice));
 
+  // shared mem gemm
   shared_mem_gemm<blockDim_x * blockDim_y, T_M, T_N, T_K>
       <<<grid, block>>>(d_A, d_B, d_C, M, K, N);
   CUDA_CHECK_KERNEL();
 
-  CUDA_CHECK(cudaMemcpy(d_C, h_C, bytes_C, cudaMemcpyDeviceToHost));
+  // cublas
+  getCUBLASRes(M, N, K, d_A, d_B, d_C_ref);
+
+  CUDA_CHECK(cudaMemcpy(h_C, d_C, bytes_C, cudaMemcpyDeviceToHost));
+  CUDA_CHECK(cudaMemcpy(h_C_ref, d_C_ref, bytes_C, cudaMemcpyDeviceToHost));
+
+  checkRes(h_C, h_C_ref, M * N);
 
   CUDA_CHECK(cudaFreeHost(h_A));
   CUDA_CHECK(cudaFreeHost(h_B));
   CUDA_CHECK(cudaFreeHost(h_C));
+  CUDA_CHECK(cudaFreeHost(h_C_ref));
   CUDA_CHECK(cudaFree(d_A));
   CUDA_CHECK(cudaFree(d_B));
   CUDA_CHECK(cudaFree(d_C));
+  CUDA_CHECK(cudaFree(d_C_ref));
 }
