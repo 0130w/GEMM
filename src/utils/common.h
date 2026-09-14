@@ -1,14 +1,17 @@
 #pragma once
 
+#include "cublas_v2.h"
 #include <cstdio>
 #include <cstdlib>
+#include <stdlib.h>
 
 #define CUDA_CHECK(expr)                                                       \
   do {                                                                         \
-    cudaError_t res = expr;                                                    \
+    cudaError_t res = (expr);                                                  \
     if (res != cudaSuccess) {                                                  \
-      fprintf(stderr, "CUDA Runtime Error: %s:%i:%d = %s\n", __FILE__,         \
-              __LINE__, res, cudaGetErrorString(res));                         \
+      std::fprintf(stderr, "CUDA Runtime Error: %s:%i:%d = %s\n", __FILE__,    \
+                   __LINE__, res, cudaGetErrorString(res));                    \
+      std::exit(EXIT_FAILURE);                                                 \
     }                                                                          \
   } while (0)
 
@@ -16,6 +19,16 @@
   do {                                                                         \
     CUDA_CHECK(cudaGetLastError());                                            \
     CUDA_CHECK(cudaDeviceSynchronize());                                       \
+  } while (0)
+
+#define CUBLAS_CHECK(expr)                                                     \
+  do {                                                                         \
+    cublasStatus_t res = (expr);                                               \
+    if (res != CUBLAS_STATUS_SUCCESS) {                                        \
+      std::fprintf(stderr, "CUDA Runtime Error: %s:%i = %d\n", __FILE__,       \
+                   __LINE__, (int)res);                                        \
+      std::exit(EXIT_FAILURE);                                                 \
+    }                                                                          \
   } while (0)
 
 inline void init(float *__restrict__ A, float *__restrict__ B, int M, int K,

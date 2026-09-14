@@ -1,5 +1,8 @@
+#include "cublas_v2.h"
+#include "cuda_runtime.h"
 #include "naive_gemm.cuh"
 #include "utils/common.h"
+#include "utils/cublas_check.cuh"
 
 int main() {
   constexpr int M = 256, N = 256, K = 128;
