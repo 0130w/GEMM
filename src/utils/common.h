@@ -41,3 +41,17 @@ inline void init(float *__restrict__ A, float *__restrict__ B, int M, int K,
     B[i] = (float)rand() / RAND_MAX;
   }
 }
+
+inline bool checkRes(const float *__restrict__ A, const float *__restrict__ B,
+                     int N) {
+  double threshold = 1e-6;
+  for (int i = 0; i < N; ++i) {
+    const double ae = std::abs(A[i] - B[i]);
+    if (ae > threshold) {
+      std::fprintf(stderr, "Calculate Result Mismatch, %s:%d: ae = %lf",
+                   __FILE__, __LINE__, ae);
+      return false;
+    }
+  }
+  return true;
+}
