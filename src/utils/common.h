@@ -42,16 +42,16 @@ inline void init(float *__restrict__ A, float *__restrict__ B, int M, int K,
   }
 }
 
-inline bool checkRes(const float *__restrict__ A, const float *__restrict__ B,
-                     int N) {
+inline int checkRes(const float *__restrict__ A, const float *__restrict__ B,
+                    int N) {
   double threshold = 1e-6;
   for (int i = 0; i < N; ++i) {
     const double ae = std::abs(A[i] - B[i]);
     if (ae > threshold) {
-      std::fprintf(stderr, "Calculate Result Mismatch, %s:%d: ae = %lf",
+      std::fprintf(stderr, "Calculate Result Mismatch, %s:%d: ae = %lf\n",
                    __FILE__, __LINE__, ae);
-      return false;
+      return 1;
     }
   }
-  return true;
+  return 0;
 }

@@ -32,6 +32,8 @@ int main() {
 
   CUDA_CHECK(cudaMemcpy(d_A, h_A, bytes_A, cudaMemcpyHostToDevice));
   CUDA_CHECK(cudaMemcpy(d_B, h_B, bytes_B, cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemset(d_C, 0, bytes_C));
+  CUDA_CHECK(cudaMemset(d_C_ref, 0, bytes_C));
 
   // naive gemm
   naive_gemm<<<grid, block>>>(d_A, d_B, d_C, M, K, N);
@@ -42,7 +44,7 @@ int main() {
   CUDA_CHECK(cudaMemcpy(h_C, d_C, bytes_C, cudaMemcpyDeviceToHost));
   CUDA_CHECK(cudaMemcpy(h_C_ref, d_C_ref, bytes_C, cudaMemcpyDeviceToHost));
 
-  checkRes(h_C, h_C_ref, M * N);
+  int ret = checkRes(h_C, h_C_ref, M * N);
 
   CUDA_CHECK(cudaFreeHost(h_A));
   CUDA_CHECK(cudaFreeHost(h_B));
@@ -52,4 +54,6 @@ int main() {
   CUDA_CHECK(cudaFree(d_B));
   CUDA_CHECK(cudaFree(d_C));
   CUDA_CHECK(cudaFree(d_C_ref));
+
+  return ret;
 }
