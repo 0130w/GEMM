@@ -10,6 +10,7 @@ inline void getCUBLASRes(int M, int N, int K, const float *__restrict__ A,
   float beta = 0.f;
   cublasHandle_t handle;
   CUBLAS_CHECK(cublasCreate(&handle));
+  CUBLAS_CHECK(cublasSetMathMode(handle, CUBLAS_PEDANTIC_MATH));
   CUBLAS_CHECK(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, M, K, &alpha, B,
                            N, A, K, &beta, C, N));
   CUBLAS_CHECK(cublasDestroy(handle));

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "cublas_v2.h"
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <stdlib.h>
@@ -42,16 +43,28 @@ inline void init(float *__restrict__ A, float *__restrict__ B, int M, int K,
   }
 }
 
-inline int checkRes(const float *__restrict__ A, const float *__restrict__ B,
-                    int N) {
-  double threshold = 1e-6;
+inline int checkRes(const float *__restrict__ got,
+                    const float *__restrict__ ref, int N, float rtol = 1e-5f,
+                    double atol = 1e-3) {
   for (int i = 0; i < N; ++i) {
-    const double ae = std::abs(A[i] - B[i]);
-    if (ae > threshold) {
-      std::fprintf(stderr, "Calculate Result Mismatch, %s:%d: ae = %lf\n",
-                   __FILE__, __LINE__, ae);
-      return 1;
+    float g = got[i], r = ref[i];
+    if (!std::isfinite(g)) {
+      std::fprintf(stderr, "%s:%i: Check got[%d] = %lf is not finite\n",
+                   __FILE__, __LINE__, i, g);
+      return EXIT_FAILURE;
+    }
+    if (!std::isfinite(r)) {
+      std::fprintf(stderr, "%s:%i: Check ref[%d] = %lf is not finite\n",
+                   __FILE__, __LINE__, i, r);
+      return EXIT_FAILURE;
+    }
+    double err = std::fabs(g - r);
+    double tol = atol + rtol * std::fabs(r);
+    if (err > tol) {
+      std::fprintf(stderr, "%s:%i: result mismatch, err: %lf, tol: %lf\n",
+                   __FILE__, __LINE__, err, tol);
+      return EXIT_FAILURE;
     }
   }
-  return 0;
+  return EXIT_SUCCESS;
 }

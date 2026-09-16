@@ -12,7 +12,9 @@ __global__ void shared_mem_gemm(const float *__restrict__ A,
   int tid = threadIdx.y * blockDim.x + threadIdx.x;
   int tileRow = blockIdx.x * T_M;
   int tileCol = blockIdx.y * T_N;
-  constexpr int ELEMS = (T_M * T_N + THREADNUM - 1) / THREADNUM;
+  static_assert((T_M * T_N) % THREADNUM == 0,
+                "THREADNUM must divide T_M * T_N.");
+  constexpr int ELEMS = (T_M * T_N) / THREADNUM;
   float acc[ELEMS] = {0.f};
 
   for (int i = 0; i < K; i += T_K) {
@@ -23,13 +25,10 @@ __global__ void shared_mem_gemm(const float *__restrict__ A,
 #pragma unroll
     for (int e = 0; e < ELEMS; ++e) {
       int j = tid + e * THREADNUM;
-      if (j >= T_M * T_N) {
-        break;
-      }
       int r = j / T_N;
       int c = j % T_N;
       for (int k = 0; k < T_K; ++k) {
-        acc[e] = fmaf(tileA[r * T_K + r], tileB[k * T_N + c], acc[e]);
+        acc[e] = fmaf(tileA[r * T_K + k], tileB[k * T_N + c], acc[e]);
       }
     }
   }
@@ -37,9 +36,6 @@ __global__ void shared_mem_gemm(const float *__restrict__ A,
 #pragma unroll
   for (int e = 0; e < ELEMS; ++e) {
     int j = tid + e * THREADNUM;
-    if (j >= T_M * T_N) {
-      break;
-    }
     int gr = tileRow + j / T_N, gc = tileCol + j % T_N;
     if (gr < M && gc < N) {
       C[gr * N + gc] = acc[e];
