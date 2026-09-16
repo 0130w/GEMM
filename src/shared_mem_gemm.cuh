@@ -1,7 +1,6 @@
 #pragma once
 
 #include "load_tile.cuh"
-#include "store_tile.cuh"
 #include <cmath>
 
 template <int THREADNUM, int T_M, int T_N, int T_K>
